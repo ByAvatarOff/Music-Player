@@ -28,7 +28,7 @@ class Ui_Dialog(QMainWindow):
         self.widght = 550
         self.hight = 700
         self.PlayerIsActive = 0 # 0 - not active, 1 - active
-        self.Time()
+
         self.msgBox = QMessageBox()
 
     def setupUi(self, Dialog):
@@ -88,7 +88,9 @@ class Ui_Dialog(QMainWindow):
         #Create Slider Status of song
         self.songSlider = QSlider(Qt.Horizontal, Dialog)
         self.songSlider.setGeometry(17, 602, 521, 15)
-        self.songSlider.valueChanged[int].connect(self.Time)
+        self.songSlider.setRange(0, 0)
+        self.songSlider.sliderMoved.connect(self.set_position)
+
 
 
         # Add labels
@@ -161,6 +163,9 @@ class Ui_Dialog(QMainWindow):
 
 
         # Events
+        self.player.positionChanged.connect(self.position_changed)
+        self.player.durationChanged.connect(self.duration_changed)
+
         self.exitAction.triggered.connect(self.quit_trigger)
         self.openAction.triggered.connect(self.file_open)
         self.openActions.triggered.connect(self.addFiles)
@@ -212,24 +217,20 @@ class Ui_Dialog(QMainWindow):
         self.msgBox.show()
 
 
-    def Time(self):
-        self.tmr0 = QTimer()
-        self.tmr0.timeout.connect(self.on_timer)
-        self.tmr0.start(1000)
+
+    def position_changed(self, position):
+        self.songSlider.setValue(position)
+        self.timeInStart.setText('00.00/' + str(time.strftime("%M:%S", time.gmtime(position / 1000))))
+
+    def duration_changed(self, duration):
+        self.songSlider.setRange(0, duration)
+
+
+    def set_position(self, position):
+        self.player.setPosition(position)
 
 
 
-    def on_timer(self):
-        if self.PlayerIsActive == 1:
-
-            val = self.songSlider.value()
-            val += 1
-            self.songSlider.setValue(val)
-            self.timeInStart.setText('00.00/' + str(time.strftime("%M:%S", time.gmtime(val))))
-            if val >= self.long:
-                self.tmr0.stop()
-            elif self.userAction == 2:
-                self.tmr0.stop()
 
 
     def quit_trigger(self):
@@ -306,16 +307,16 @@ class Ui_Dialog(QMainWindow):
 
     def addFiles(self):
         if self.playlist.mediaCount() != 0:
-            
             self.folderIterator()
         else:
             self.folderIterator()
             self.player.setPlaylist(self.playlist)
             self.player.playlist().setCurrentIndex(0)
+            print(self.playlist)
             for song in range(self.playlist.mediaCount()):
                 audioFile = mutagen.File(self.sp_songs[song])
                 self.long = audioFile.info.length
-                self.AllTimeSong.setText(str(time.strftime("%M:%S", time.gmtime(round(self.long)))))
+                self.AllTimeSong.setText(str(time.strftime("%M:%S", time.gmtime(self.long))))
 
 
                 self.player.play()
@@ -326,7 +327,6 @@ class Ui_Dialog(QMainWindow):
 
     def folderIterator(self):
         folderChosen = QFileDialog.getExistingDirectory(self, 'Open Music Folder', '')
-
         if folderChosen != None:
             it = QDirIterator(folderChosen)
             it.next()
@@ -396,6 +396,7 @@ class Ui_Dialog(QMainWindow):
         self.userAction = 0
         self.player.stop()
         self.playlist.clear()
+        self.songSlider.setMaximum(0)
 
     def changeVolume(self, value):
         self.player.setVolume(value)
@@ -405,6 +406,7 @@ class Ui_Dialog(QMainWindow):
             self.file_open()
         elif self.playlist.mediaCount() != 0:
             self.player.playlist().previous()
+            self.songSlider.setMaximum(0)
 
     def shufflelist(self):
         self.playlist.shuffle()
@@ -414,7 +416,8 @@ class Ui_Dialog(QMainWindow):
             self.file_open()
         elif self.playlist.mediaCount() != 0:
             self.player.playlist().next()
-
+            self.songSlider.setMinimum(0)
+            self.songSlider.setMaximum(self.long)
 
 
 if __name__ == '__main__':
