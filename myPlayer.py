@@ -230,11 +230,9 @@ class Ui_Dialog(QMainWindow):
         self.player.setPosition(position)
 
 
-
-
-
     def quit_trigger(self):
         qApp.quit()
+
 
     def file_open(self):
         self.song = QFileDialog.getOpenFileName(self, "Open Song", "", "Sound Files (*.mp3 *.ogg *.wav *.m4a)")
@@ -274,7 +272,6 @@ class Ui_Dialog(QMainWindow):
     def ShowInfoAboutSong(self):
         #Open song in mutagen
         audioFile = mutagen.File(self.song[0])
-
         #Create time label (all time song)
         self.long = audioFile.info.length
 
@@ -305,6 +302,49 @@ class Ui_Dialog(QMainWindow):
             self.showInfoToMusic_1.setText(singer)
 
 
+    def show_more_music(self):
+        try:
+            self.audioFile = mutagen.File(self.sp_songs[self.playlist.currentIndex()])
+            pixmap_1 = QPixmap('Plug_2.png').scaled(300, 300)
+            try:
+                photo = self.audioFile.tags.getall('APIC')[0].data
+                pixmap = QPixmap()
+                pixmap.loadFromData(photo)
+                pixmap.scaled(300, 300)
+                self.PictureAlbum.setPixmap(pixmap)
+            except IndexError:
+                self.PictureAlbum.setPixmap(pixmap_1)
+
+        except IndexError:
+            pass
+        try:
+            self.index = 0
+            audioFile = mutagen.File(self.sp_songs[self.playlist.currentIndex()])
+            self.long = audioFile.info.length
+            singer = audioFile.tags.getall('TPE1')
+            song_title = audioFile.tags.getall('TIT2')
+            YearOfSong = audioFile.tags.getall('TDRC')
+            Bitrate = (audioFile.info.bitrate) // 1000
+            singer = str(singer[0])
+            song_title = str(song_title[0])
+            try:
+                self.AllTimeSong.setText(str(time.strftime("%M:%S", time.gmtime(round(self.long)))))
+                self.showInfoToMusic_1.setToolTip(singer.encode('latin1').decode('cp1251'))
+                self.showInfoToMusic_2.setToolTip(song_title.encode('latin1').decode('cp1251'))
+                self.showInfoToMusic_1.setText(singer.encode('latin1').decode('cp1251'))
+                self.showInfoToMusic_2.setWordWrap(True)
+                self.showInfoToMusic_2.setText(song_title.encode('latin1').decode('cp1251'))
+                self.showInfoToMusic_2.setWordWrap(True)
+                self.showInfoToMusic_3.setText(str(YearOfSong[0]))
+                self.showInfoToMusic_4.setText(str(Bitrate) + ' kbps')
+            except IndexError:
+                self.showInfoToMusic.setText('')
+            except UnicodeEncodeError:
+                self.showInfoToMusic_2.setText(song_title)
+                self.showInfoToMusic_1.setText(singer)
+        except IndexError:
+            pass
+
     def addFiles(self):
         if self.playlist.mediaCount() != 0:
             self.folderIterator()
@@ -312,17 +352,11 @@ class Ui_Dialog(QMainWindow):
             self.folderIterator()
             self.player.setPlaylist(self.playlist)
             self.player.playlist().setCurrentIndex(0)
-            print(self.playlist)
-            for song in range(self.playlist.mediaCount()):
-                audioFile = mutagen.File(self.sp_songs[song])
-                self.long = audioFile.info.length
-                self.AllTimeSong.setText(str(time.strftime("%M:%S", time.gmtime(self.long))))
-
-
-                self.player.play()
-                self.userAction = 1
-                self.PlayerIsActive = 1
-
+            self.player.play()
+            self.userAction = 1
+            self.PlayerIsActive = 1
+            self.show_more_music()
+            self.playlist.currentIndexChanged.connect(self.show_more_music)
 
 
     def folderIterator(self):
@@ -331,22 +365,18 @@ class Ui_Dialog(QMainWindow):
             it = QDirIterator(folderChosen)
             it.next()
             self.sp_songs = []
-
             while it.hasNext():
                 if it.fileInfo().isDir() == False and it.filePath() != '.':
-
                     fInfo = it.fileInfo()
                     if fInfo.suffix() in ('mp3', 'ogg', 'wav', 'm4a'):
                         self.sp_songs.append(it.filePath())
                         self.playlist.addMedia(QMediaContent(QUrl.fromLocalFile(it.filePath())))
                 it.next()
-
             if it.fileInfo().isDir() == False and it.filePath() != '.':
                 self.sp_songs.append(it.filePath())
                 fInfo = it.fileInfo()
                 if fInfo.suffix() in ('mp3', 'ogg', 'wav', 'm4a'):
                     self.playlist.addMedia(QMediaContent(QUrl.fromLocalFile(it.filePath())))
-        print(self.sp_songs)
 
 
     def ChangeBlackTheme(self):
@@ -396,7 +426,6 @@ class Ui_Dialog(QMainWindow):
         self.userAction = 0
         self.player.stop()
         self.playlist.clear()
-        self.songSlider.setMaximum(0)
 
     def changeVolume(self, value):
         self.player.setVolume(value)
@@ -406,18 +435,31 @@ class Ui_Dialog(QMainWindow):
             self.file_open()
         elif self.playlist.mediaCount() != 0:
             self.player.playlist().previous()
-            self.songSlider.setMaximum(0)
+            try:
+                self.show_more_music()
+            except AttributeError:
+                pass
 
     def shufflelist(self):
-        self.playlist.shuffle()
+        if self.playlist.mediaCount() == 0:
+            self.file_open()
+        elif self.playlist.mediaCount() != 0:
+            try:
+                self.playlist.shuffle()
+                self.show_more_music()
+            except AttributeError:
+                pass
 
     def nextSong(self):
         if self.playlist.mediaCount() == 0:
             self.file_open()
         elif self.playlist.mediaCount() != 0:
-            self.player.playlist().next()
-            self.songSlider.setMinimum(0)
-            self.songSlider.setMaximum(self.long)
+            try:
+                self.player.playlist().next()
+                self.show_more_music()
+            except AttributeError:
+                pass
+
 
 
 if __name__ == '__main__':
