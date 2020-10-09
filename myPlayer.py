@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-
-# Form implementation generated from reading ui file 'Player.ui'
-#
-# Created by: PyQt5 UI code generator 5.13.0
-#
-# WARNING! All changes made in this file will be lost!
-
 import sys
 import time
 import mutagen
@@ -165,6 +157,7 @@ class Ui_Dialog(QMainWindow):
         # Events
         self.player.positionChanged.connect(self.position_changed)
         self.player.durationChanged.connect(self.duration_changed)
+        self.RecommendedDataBase.connect(self.connect_list)
 
         self.exitAction.triggered.connect(self.quit_trigger)
         self.openAction.triggered.connect(self.file_open)
@@ -217,10 +210,13 @@ class Ui_Dialog(QMainWindow):
         self.msgBox.show()
 
 
+    def connect_list(self):
+        pass
+
 
     def position_changed(self, position):
         self.songSlider.setValue(position)
-        self.timeInStart.setText('00.00/' + str(time.strftime("%M:%S", time.gmtime(position / 1000))))
+        self.timeInStart.setText(str(time.strftime("%M:%S", time.gmtime(position / 1000))))
 
     def duration_changed(self, duration):
         self.songSlider.setRange(0, duration)
@@ -404,6 +400,9 @@ class Ui_Dialog(QMainWindow):
         oImage = QImage(font[0])
         sImage = oImage.scaled(QtCore.QSize(self.widght, self.hight))
         self.palette.setBrush(QPalette.Window, QBrush(sImage))
+        self.palette.setColor(QPalette.Text, Qt.white)
+        self.palette.setColor(QPalette.WindowText, Qt.white)
+        self.palette.setColor(QPalette.ToolTipText, Qt.white)
         QApplication.setPalette(self.palette)
 
 
