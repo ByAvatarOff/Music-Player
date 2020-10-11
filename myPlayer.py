@@ -1,11 +1,21 @@
+import MusicParser
 import sys
 import time
 import mutagen
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QMainWindow, QFileDialog, QPushButton, QAction, QMenuBar, qApp, QApplication, QSlider, QVBoxLayout, QLabel, QMessageBox
+from PyQt5.QtWidgets import QMainWindow, QFileDialog, QPushButton, QAction, QMenuBar, qApp, QApplication, QSlider, QVBoxLayout, QLabel, QMessageBox, QWidget
 from PyQt5.QtGui import QImage, QPalette, QBrush, QPixmap, QIcon
-from PyQt5.QtCore import QUrl, QDirIterator, Qt, QTimer
+from PyQt5.QtCore import QUrl, QDirIterator, Qt
 from PyQt5.QtMultimedia import QMediaPlaylist, QMediaPlayer, QMediaContent
+
+#Two Window for song list
+class Window2(QWidget):
+    def __init__(self):
+        super(Window2, self).__init__()
+        self.setWindowTitle('MyPlayer Songs')
+        self.resize(550, 700)
+        self.setWindowIcon(QIcon('Plug_2.png'))
+
 
 
 class Ui_Dialog(QMainWindow):
@@ -17,16 +27,17 @@ class Ui_Dialog(QMainWindow):
         self.palette = QPalette()
         self.VerticalLayout = QVBoxLayout()
         self.userAction = -1  # 0- stopped, 1- playing 2-paused
-        self.widght = 550
-        self.hight = 700
+        self.width = 550
+        self.height = 700
         self.PlayerIsActive = 0 # 0 - not active, 1 - active
+        self.nameFont = 'Plug_2.png'
 
         self.msgBox = QMessageBox()
 
     def setupUi(self, Dialog):
-        Dialog.resize(self.widght, self.hight)
+        Dialog.resize(self.width, self.height)
         Dialog.setWindowTitle('MyPlayer')
-        Dialog.setWindowIcon(QIcon('Plug_2.png'))
+        Dialog.setWindowIcon(QIcon(self.nameFont))
 
 
         # Add MainMenu
@@ -157,7 +168,7 @@ class Ui_Dialog(QMainWindow):
         # Events
         self.player.positionChanged.connect(self.position_changed)
         self.player.durationChanged.connect(self.duration_changed)
-        self.RecommendedDataBase.connect(self.connect_list)
+        self.RecommendedDataBase.triggered.connect(self.connect_list)
 
         self.exitAction.triggered.connect(self.quit_trigger)
         self.openAction.triggered.connect(self.file_open)
@@ -209,10 +220,25 @@ class Ui_Dialog(QMainWindow):
         self.msgBox.setStandardButtons(QMessageBox.Close)
         self.msgBox.show()
 
-
     def connect_list(self):
-        pass
+        self.w2 = Window2()
+        dic_music = MusicParser.parse()
+        x = 550
+        y = 50
+        for i, j in dic_music.items():
+            #h = QLabel(self.w2)
+            #h.setGeometry(10,0, x,y)
+            verticalLayoutWidget = QtWidgets.QWidget(self.w2)
+            verticalLayoutWidget.setGeometry(QtCore.QRect(10, 0, x, y))
+            verticalLayout = QtWidgets.QVBoxLayout(verticalLayoutWidget)
+            verticalLayout.setContentsMargins(0, 0, 0, 0)
+            left_label = QLabel(verticalLayoutWidget)
+            verticalLayout.addWidget(left_label)
+            left_label.setFont(QtGui.QFont("Times", 9, QtGui.QFont.Bold))
+            left_label.setText(i + ' - ' + j)
+            y += 60
 
+        self.w2.show()
 
     def position_changed(self, position):
         self.songSlider.setValue(position)
@@ -221,14 +247,11 @@ class Ui_Dialog(QMainWindow):
     def duration_changed(self, duration):
         self.songSlider.setRange(0, duration)
 
-
     def set_position(self, position):
         self.player.setPosition(position)
 
-
     def quit_trigger(self):
         qApp.quit()
-
 
     def file_open(self):
         self.song = QFileDialog.getOpenFileName(self, "Open Song", "", "Sound Files (*.mp3 *.ogg *.wav *.m4a)")
@@ -377,7 +400,7 @@ class Ui_Dialog(QMainWindow):
 
     def ChangeBlackTheme(self):
         oImage = QImage("BlackFont.png")
-        sImage = oImage.scaled(QtCore.QSize(self.widght, self.hight))
+        sImage = oImage.scaled(QtCore.QSize(self.width, self.height))
         self.palette.setBrush(QPalette.Window, QBrush(sImage))
         self.palette.setColor(QPalette.Text, Qt.white)
         self.palette.setColor(QPalette.WindowText, Qt.white)
@@ -387,7 +410,7 @@ class Ui_Dialog(QMainWindow):
 
     def ChangeWhiteTheme(self):
         oImage = QImage("WhiteFont_.jpg")
-        sImage = oImage.scaled(QtCore.QSize(self.widght, self.hight))
+        sImage = oImage.scaled(QtCore.QSize(self.width, self.height))
         self.palette.setBrush(QPalette.Window, QBrush(sImage))
         self.palette.setColor(QPalette.Text, Qt.black)
         self.palette.setColor(QPalette.WindowText, Qt.black)
@@ -398,7 +421,7 @@ class Ui_Dialog(QMainWindow):
     def LoadYourBackground(self):
         font = QFileDialog.getOpenFileName(self, "Open Image", "", "Image Files (*.png *.jpg *.JPEG )")
         oImage = QImage(font[0])
-        sImage = oImage.scaled(QtCore.QSize(self.widght, self.hight))
+        sImage = oImage.scaled(QtCore.QSize(self.width, self.height))
         self.palette.setBrush(QPalette.Window, QBrush(sImage))
         self.palette.setColor(QPalette.Text, Qt.white)
         self.palette.setColor(QPalette.WindowText, Qt.white)
@@ -444,8 +467,8 @@ class Ui_Dialog(QMainWindow):
             self.file_open()
         elif self.playlist.mediaCount() != 0:
             try:
-                self.playlist.shuffle()
                 self.show_more_music()
+                self.playlist.shuffle()
             except AttributeError:
                 pass
 
