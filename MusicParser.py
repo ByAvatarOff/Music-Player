@@ -1,9 +1,17 @@
 import requests
 from bs4 import BeautifulSoup
+import socket
 
 URL = 'https://hotmo.org/songs/top-today'
 HEADERS = {}
 
+
+def is_connection():
+    try:
+        socket.gethostbyaddr('www.google.ru')
+    except socket.gaierror:
+        return False
+    return True
 
 def get_html(url):
     req = requests.get(url, headers=HEADERS)
@@ -26,8 +34,13 @@ def content(html):
 
 
 def parse():
-    html = get_html(URL)
-    if html.status_code == 200:
-        c = content(html.text)
+    b = {'Нет': 'Интернет соединения'}
+    if is_connection():
+        html = get_html(URL)
+        if html.status_code == 200:
+            c = content(html.text)
+    else:
+        return b
     return c
+
 
